@@ -1,0 +1,90 @@
+Specyfikacja wymagań
+1. Wprowadzenie do specyfikacji
+a) Cel dokumentu
+Celem niniejszego dokumentu jest przedstawienie wymagań systemu
+informatycznego. Dokument ten będzie przedstawiał zleceniodawcy, jaka ma być
+funkcjonalność systemu oraz jakie wymagania powinien on spełnić.
+Dokument ten został napisany z myślą o potencjalnych użytkownikach,
+projektantach, programistach, osobach zajmujących się testowaniem i autorach
+dokumentacji użytkowej.
+b) Zakres produktu
+Podczas przeprowadzenia wizji lokalnej, osoby które będą korzystały z
+oprogramowania, zażyczyły sobie kilka funkcji, które mają występować w naszym
+projekcie. Poniżej przedstawione zostały wymagania.
+Każdy z użytkowników systemu podkreślił, że powinien być on intuicyjny i
+łatwy w obsłudze. W zespole projektowym znajduje się grafik komputerowy, który
+zajmie się grafiką oraz przejrzystym ułożeniem, aby w jak najmniejszym stopniu
+sprawiała ona problem nowym użytkownikom.
+Kolejny aspekt, który ukazał się w wywiadzie to możliwość tworzenia
+własnego konta użytkownika do dzielenia się własnymi spostrzeżeniami z innymi.  Każdy zalogowany użytkownik będzie miał możliwość także oceniać gry oraz stworzyć własny ranking, a także zapamiętywać w bazie gry w jakie chce zagrać w przyszłości.
+Wszystkie osoby, które będą korzystały z serwisu, wyraziły zastrzeżenie, że opinie, oceny oraz komentarze powinny być widoczne także dla niezarejestrowanych użytkowników.
+Z opinii wynika, że warto by było umieścić funkcje druku. 
+Są to wszystkie wymagania, przekazane grupie projektowej przez
+użytkowników systemu. Jeżeli zaistnieje konieczność, lista ta będzie poszerzana.
+c) Definicje, akronimy i skróty
+PHP — obiektowy język programowania zaprojektowany do generowania stron
+internetowych i budowania aplikacji webowych w czasie rzeczywistym.
+HTML — hipertekstowy język znaczników.
+Tabele — w bazach danych są wydzielonym logicznie zbiorem danych.
+Skrypt — programy napisane w językach skryptowych.
+Skórka — zbiór ustawień graficznych, które w łatwy sposób pozwalają na zmianę
+wyglądu okna i innych części danego systemu.
+Formularze — interfejs do pracy z informacjami w bazie danych.
+SSL — Rozbudowana wersja protokołu HTTP, dzięki któremu możliwa jest
+bezpieczna (szyfrowana) transmisja danych z komputera klienta do serwera WWW i
+na odwrót.
+
+2. Ogólny opis produktu
+a) Charakterystyka użytkowników
+Z aplikacji będą korzystały dwie grupy użytkowników:
+• Administratorzy – osoby młode w wieku od 20 – 30 lat. Mogą dodawać nowe pozycje do bazy danych, zmieniać informacje, pisać artykuły dotyczące gier a także usuwać komentarze niezgodne z regulaminem.
+• Użytkownicy serwisu tzw. Gracze – osoby w wieku od 15 lat, fascynacji gier oraz użytkownicy grający sporadycznie. Każdy z nich będzie posiadał osobiste konto, z którego poziomu będzie mógł oceniać gry, komentować a także wyrażać chęć zagrania.
+b) Główne funkcje produktu
+Funkcje, które trzeba koniecznie zrealizować:
+• Realizacja jednego szablonu pod system informatyczny.
+• Możliwość logowania do systemu za pomocą odpowiednich danych.
+• Możliwość wylogowywania się z usługi po wykonaniu odpowiednich
+czynności oraz po upływie czasu.
+• Wprowadzanie komenatarzy.
+• Wystawianie ocen grom.
+• Dodawanie nowych pozycji.
+Funkcje, które mogą być zrealizowane, ale nie są konieczne:
+• Układ strony będzie możliwy do wyboru z kilku szablonów.
+• Segregacja gier według ich rodzajów.
+• Edycja komentarzy.
+c) Ograniczenia
+• System musi spełniać wymagania stawiane przez ustawę o ochronie danych
+osobowych.
+• System musi spełniać wymagania dotyczące ustawy o prawie autorskim.
+d) Założenia i zależności.
+• Prezentowane wymagania dotyczą stanu na dzień 15 marca 2015
+roku.
+
+3. Wymagania funkcjonalne
+• Możliwość logowania do systemu za pomocą odpowiednich danych.
+• Możliwość wylogowywania się z usługi po wykonaniu odpowiednich
+czynności oraz po upływie czasu.
+• Użytkonwik będzie mógł: 
+- wprowadzac komentarze, 
+- wystawiać oceny grom, 
+- czytać opisy, 
+- dodawać recenzje, 
+- korzystac z opcji " chcę zagrać ponownie".
+• Moderatorzy poza możliwościami zwykych użytkowników mogą: 
+- dodawać nowe gry, 
+- opisy gier,
+- banować i usuwać graczy.
+• Administrator może:
+- zmieniać silnik strony oraz jej grafikę,
+- zarządzanie kontami moderatorów, czyli usuwanie i dodawanie.
+
+4. Wymagania niefunkcjonalne
+a) Użyteczność
+Zespół zobowiązany jest do podjęcia możliwych kroków, aby system
+informatyczny był łatwy w obsłudze. 
+b) Niezawodność
+System, który został zaprojektowany przez nasz zespół tak gwarantuje ciągłą i nieprzerwaną pracę przez 1000 godzin. Prace konserwacyjne będą przeprowadzane w godzinach, aby użytkownicy nie odczuli braku dostępności serwisu. 
+c) Wydajność
+Do systemu będą mogły zalogować się jednocześnie 20 osób, założyliśmy, że każdy z używkoników nie będzie wykonywał więcej niż 2 operacje w jednym czasie. Wynika to z możliwości dostępnego serwera.
+d) Bezpieczeństwo
+Program, który został przez nas napisany, jest w pełni bezpieczny. Serwis nie będzie zawierał poufnych danych. Szyfrowane będą jedyne dane użytkowników. Wszystkie informacje dotyczące gier będą dostępne dla wszystkich użytkowników oraz niezarejestrowanych gości serwisu.
