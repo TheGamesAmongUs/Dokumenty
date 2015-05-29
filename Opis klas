@@ -1,0 +1,923 @@
+About.php
+
+Podstrona serwisu mająca na celu wyświetle Avatarów członków zespołu pobierane z bazy danych, oraz ich imiona i nawiska wpisane statycznie.
+
+
+Article.php
+
+Postrona serwisu odpowiedzialna za obsługę artykułów tzn. wyświetlanie ich, komentowanie i ocenianie, oraz dodawanie do ulubionych
+
+
+
+Ocenianie:
+
+
+if(isset($_POST['ocena_s']))
+     {
+
+            // sprawdzamy czy gra została już oceniona przez gracza
+            $result = mysql_query("SELECT * FROM OCENA_ART WHERE ID_GRACZ='$ty' AND ID_ART='$article_id'");
+           
+             // jeśli nie
+            if(mysql_num_rows($result)==0){
+    $ins = @mysql_query("INSERT INTO OCENA_ART SET ID_GRACZ='$ty', OCENA_ART='$ocenka', ID_ART='$article_id'"); 
+					   } 
+//jeśli już oceniono, ocena zostaje zaktyalizowana
+else{
+
+$zapytanie = "UPDATE OCENA_ART SET OCENA_ART='$ocenka' WHERE ID_GRACZ='$ty' AND ID_ART='$article_id'"; // info awatarze zapis w bazie
+
+$idzapytania = mysql_query($zapytanie);
+
+}
+	}
+
+
+
+Komentowanie:
+
+
+if($_SESSION['logged'] and $article_id!=null and $article_id!=0) {
+echo '<table id="asd"><tr><td><form action="'.$site_adr.'" method="post">
+<textarea name="comtext" placeholder="Treść komentarza..." id="comtext"></textarea></td>
+<td align="left"><input type="submit" name="com_s" value="Dodaj komenarz" class="btn"></input></td></tr>
+</form></table>';
+}
+echo '<table>';
+
+
+
+/*
+$wynik = mysql_query("SELECT * FROM KOMENTARZE_ART WHERE ID_ARTYKUL='$article_id' ORDER BY ID_KOM_ART ASC");
+*/
+
+
+$wynik = mysql_query("SELECT * FROM KOMENTARZE_ART, GRACZ WHERE KOMENTARZE_ART.ID_ARTYKUL='$article_id' and KOMENTARZE_ART.ID_GRACZ=GRACZ.ID_GRACZ ORDER BY ID_KOM_ART DESC");
+
+$i=0;
+while($wiersz = mysql_fetch_array($wynik))
+  {
+
+//pobranie danych dotyczących komentarza
+	
+$tresc_kom[$i] = $wiersz['KOM_ART'].'';
+$id_aut[$i] = $wiersz['ID_GRACZ'].'';
+$log_aut[$i] = $wiersz['LOGIN'].'';
+$id_kom[$i] = $wiersz['ID_KOM_ART'].'';
+$data[$i] = $wiersz['DATE'].'';
+$godz[$i] = $wiersz['TIME'].'';
+
+
+$i++;
+  }
+
+
+
+//wyświetlenie komentarzy
+for($i=(($page*$kpp)-$kpp), $j=(($page*$kpp)-$kpp+1); $i<($page*$kpp) and $i<$ile_kom; $i++, $j++){
+
+echo'<br> <table>
+<tr><td width="55px"><a href="profile.php?id='.$id_aut[$i].'"><div id="avatar-kom" style="background-image: url(img/avatar/avatar'.$id_aut[$i].'.jpg); background-repeat: no-repeat; background-size:50px, 50px;
+background-position: center; width:50px; height:50px; border-style: solid; border-width:1px; border-radius: 100px;"></div></a></td><td><div id="kom-aut">Autor: <a href="profile.php?id='.$id_aut[$i].'">'.$log_aut[$i].'</a><br>Data Dodania:'.$data[$i].'<br>Czas: '.$godz[$i].'</div></td></tr>
+<tr><td colspan="2"><div id="kom-tresc"><hr>'.$tresc_kom[$i].'</div></td></tr>
+</table>';
+  
+	}
+
+
+config.php
+
+Zawiera funkcję dzięki której można się połączyć z bazą danych, a także ustalona jest strefa czasowa
+
+
+date_default_timezone_set('Europe/Warsaw');
+
+
+function baza(){
+    $connection = @mysql_connect('sql112.000a.biz', 'a000b_16095898', 'gamesamongus') 
+    or die('Brak połączenia z serwerem MySQL'); 
+  
+    $db = @mysql_select_db('a000b_16095898_tgas', $connection) 
+    or die('Nie mogę połączyć się z bazą danych'); 
+}
+
+
+
+
+add_game.php
+
+Plik zawierający formularz, dodawania gry do bazy danych
+
+if($_SESSION['logged']) {
+//formularz dodawania gry widoczny tylko dla zalogowanego użytkownika
+
+echo '
+<form  action="addg.php"  method="POST" id="dodaj" enctype="multipart/form-data">
+
+<input type="hidden" name="MAX_FILE_SIZE" value="500000" /> </br>
+Dodaj okładke gry: <input name="plik" type="file" /> </br>
+<input type="text" placeholder="Tytuł gry..." name="add_tyt" class="add" id="add_tyt" ></input><br>
+<input type="text" placeholder="Podaj rok wydania gry..." name="add_rok" class="add" id="add_tyt" ></input><br><br>
+<textarea name="add_cont" form="dodaj" id="add_cont" placeholder="Opisz dodawaną grę..."></textarea><br>
+<input type="hidden" name="id_autora" value="'.$_SESSION['ID_GRACZ'].'"></input>
+<input type="hidden" name="mod" value="'.$_SESSION['MOD'].'"></input>
+
+<div id="addbtn" align="right">
+<input type="submit" value="Wyślij" name="ok" class="btnlog"></input>
+</form>';} else {
+echo 'zaloguj się, aby móc dodawać gry';
+}
+
+
+addg.php
+
+Plik zawierający mechanizm, dodawania gry do bazy danych
+
+ 
+
+//wpisanie tytulu i roku do tabeli GRY
+
+	$ins = @mysql_query("INSERT INTO GRY SET NAZWA_GRY='$tytul', ROK_GRY='$rok'"); 
+	
+		if($ins) {
+			echo "Rekord został dodany poprawnie ";
+			 }
+    else echo "Błąd nie udało się dodać nowego rekordu"; 
+
+$idgry=mysql_insert_id();
+
+if($ins){
+
+//następnie poprzednio dodane rekordy są powiązane z aktualnie dodawanymi danymi dotyczącymi artykułu
+
+$result = mysql_query("SELECT * FROM ARTYKULY WHERE TYTUL_ART='$tytul'") ;
+ 
+        // jeśli już istnieje
+        if(mysql_num_rows($result)!=0) echo 'Już istnieje konto z takim loginem!';
+else
+        {
+
+
+    	$ins = @mysql_query("INSERT INTO ARTYKULY SET TYTUL_ART='$tytul', TRESC_ART='$tresc' , RODZAJ='1', AUTOR_ART_ID='$id_autora', ACCEPT=0, ID_GRY='$idgry'"); 
+    	
+$idid=mysql_insert_id();
+
+if($mod==1)
+{
+
+$zapytanie = "UPDATE ARTYKULY SET ACCEPT=1 WHERE ID_ARTYKUL='$idid'"; // info awatarze zapis w bazie
+$idzapytania = mysql_query($zapytanie);  	
+}
+
+
+contact.php
+
+Podstrona zawierająca formularz kontaktowy
+
+
+edit_game.php
+
+Plik ten zawiera formularz edycji gry i uzupełnia go danymi z bazy danych
+
+$zapytanie = "Select AUTOR_ART_ID FROM ARTYKULY WHERE ID_ARTYKUL = '$article_id'";
+list($autor_id)=mysql_fetch_array (mysql_query($zapytanie));
+
+$zapytanie = "Select TYTUL_ART FROM ARTYKULY WHERE ID_ARTYKUL = '$article_id'";
+list($tytul)=mysql_fetch_array (mysql_query($zapytanie));
+
+
+$zapytanie = "Select TRESC_ART FROM ARTYKULY WHERE ID_ARTYKUL = '$article_id'";
+list($tresc)=mysql_fetch_array (mysql_query($zapytanie));
+
+
+$zapytanie = "Select ID_GRY FROM ARTYKULY WHERE ID_ARTYKUL = '$article_id'";
+list($game_id)=mysql_fetch_array (mysql_query($zapytanie));
+
+$zapytanie = "Select ROK_GRY FROM GRY WHERE ID_GRY = '$game_id'";
+list($rok)=mysql_fetch_array (mysql_query($zapytanie));
+
+
+if($_SESSION['logged']) {
+
+if($_SESSION['ID_GRACZ']==$autor_id or $_SESSION['MOD']==1 or $_SESSION['ADMIN']==1)
+{
+echo '
+<table><td align="center" valign="top">Okładka<br><img width="150px" height="211" src="img/article/cov_'.$article_id.'.jpg"></img></td>
+<td><form  action="editg.php"  method="POST" id="dodaj" enctype="multipart/form-data">
+
+<input type="hidden" name="MAX_FILE_SIZE" value="500000" /> </br>
+<input name="plik" type="file" /> </br>
+<input type="text" placeholder="Tytuł gry..." name="add_tyt" class="add" value="'.$tytul.'" id="add_tyt" ></input></br>
+<input type="text" placeholder="Podaj rok wydania gry..." name="add_rok" class="add" value="'.$rok.'" id="add_tyt" ></input><br><br>
+<textarea name="add_cont" form="dodaj" id="add_cont" placeholder="Opisz dodawaną grę...">'.$tresc.'</textarea></br>
+<input type="hidden" name="id_autora" value="'.$_SESSION['ID_GRACZ'].'"></input>
+<input type="hidden" name="article_id" value="'.$article_id.'"></input>
+<input type="hidden" name="game_id" value="'.$game_id.'"></input>
+
+<div align="right" id="edbtn">
+<input type="submit" value="Wyślij" name="ok" class="btnlog"></input>
+</form></td>
+</tr>
+</table>';
+} else {
+echo 'Nie masz uprawnień, aby móc dodawać gry';
+}
+
+
+}  else {
+echo 'zaloguj się, aby móc edytować gry';
+}
+
+
+editg.php
+
+Plik zawierający mechanizm edycji gry na podstawie danych wysłanych z formularza edycji
+
+            $result = mysql_query("SELECT * FROM ARTYKULY WHERE ID_ARTYKUL='$article_id'");
+           
+             // jeśli nie istnieje
+            if(mysql_num_rows($result)==0) echo 'Podany id artykułu jest nieprawidłowy';
+         
+             // jeśli tak...
+            else
+            {
+
+$zapytanie = "UPDATE ARTYKULY SET TYTUL_ART='$tytul', TRESC_ART='$tresc' WHERE ID_ARTYKUL='$article_id'"; 
+
+mysql_query($zapytanie);
+
+
+$zapytanie = "UPDATE GRY SET NAZWA_GRY='$tytul', ROk_GRY='$rok' WHERE ID_GRY='$game_id'"; 
+
+mysql_query($zapytanie);
+
+
+
+
+gamelist.php
+
+Postrona serwisu, odpowiedzialna za wyświetlenie i posegregowanie listy gier 
+
+//Wszystkie
+} else{
+$ile_stron = ceil($ile_gier/$wpp);
+$wynik = mysql_query("SELECT * FROM ARTYKULY WHERE RODZAJ = 1 AND ACCEPT = 1 ORDER BY TYTUL_ART ASC");
+$i=1;
+
+while($wiersz = mysql_fetch_array($wynik))
+  {
+$tablica[$i] ='<a href="article.php?id='.$wiersz['ID_ARTYKUL'].'"><div class="arti"><div id="cov_arti"><img width="65" height="92" src="img/article/'.$wiersz['COVER'].'"></img></div><div id="tit_arti">'.$wiersz['TYTUL_ART'].'</div></div></a>';
+$i++;
+
+  }
+
+/*
+for($i=(($page*$wpp)-$wpp), $j=(($page*$wpp)-$wpp+1); $i<($page*$wpp) and $i<=$ile_gier; $i++, $j++){
+
+echo $tablica[$i].'</br>';
+
+		 
+}
+*/
+
+
+
+echo '<table align="center" >';
+
+echo '<tr>';
+
+for($i=(($page*$wpp)-$wpp), $j=(($page*$wpp)-$wpp+1); $i<($page*$wpp) and $i<=$ile_gier; $i++, $j++){
+if($i>0){
+echo "<td width='150px' align='center'>$tablica[$i]</td>";
+if($i%7==0 and $i!=0){
+echo'</tr><tr>';
+}
+
+
+}
+}
+echo '</tr>';
+
+
+
+echo '</table>';
+
+
+
+
+
+//Poprzednia strona 123(4)56789 Następna strona || dla wszystkich
+
+echo '<br><div id="list_nav">';
+if($page>1){
+echo '<a href=gamelist.php?page='.($page-1).'>Poprzednia Strona</a> ';
+}else {
+echo 'Poprzednia Strona ';
+}
+
+for($i=1; $i<=$ile_stron; $i++){
+if($i==$page){
+echo $page.' ';
+}else{
+echo '<a href=gamelist.php?page='.$i.'>'.$i.'</a> ';
+}
+
+}
+if($page<$ile_stron){
+echo '<a href=gamelist.php?page='.($page+1).'>Następna Strona</a> ';
+}else {
+echo 'Następna Strona';
+}
+
+}
+
+
+
+login.php
+
+Logowanie do serwisu
+
+//Wszystkie
+} else{
+$ile_stron = ceil($ile_gier/$wpp);
+$wynik = mysql_query("SELECT * FROM ARTYKULY WHERE RODZAJ = 1 AND ACCEPT = 1 ORDER BY TYTUL_ART ASC");
+$i=1;
+
+while($wiersz = mysql_fetch_array($wynik))
+  {
+$tablica[$i] ='<a href="article.php?id='.$wiersz['ID_ARTYKUL'].'"><div class="arti"><div id="cov_arti"><img width="65" height="92" src="img/article/'.$wiersz['COVER'].'"></img></div><div id="tit_arti">'.$wiersz['TYTUL_ART'].'</div></div></a>';
+$i++;
+
+  }
+
+/*
+for($i=(($page*$wpp)-$wpp), $j=(($page*$wpp)-$wpp+1); $i<($page*$wpp) and $i<=$ile_gier; $i++, $j++){
+
+echo $tablica[$i].'</br>';
+
+		 
+}
+*/
+
+
+
+echo '<table align="center" >';
+
+echo '<tr>';
+
+for($i=(($page*$wpp)-$wpp), $j=(($page*$wpp)-$wpp+1); $i<($page*$wpp) and $i<=$ile_gier; $i++, $j++){
+if($i>0){
+echo "<td width='150px' align='center'>$tablica[$i]</td>";
+if($i%7==0 and $i!=0){
+echo'</tr><tr>';
+}
+
+
+}
+}
+echo '</tr>';
+
+
+
+echo '</table>';
+
+
+
+
+
+//Poprzednia strona 123(4)56789 Następna strona || dla wszystkich
+
+echo '<br><div id="list_nav">';
+if($page>1){
+echo '<a href=gamelist.php?page='.($page-1).'>Poprzednia Strona</a> ';
+}else {
+echo 'Poprzednia Strona ';
+}
+
+for($i=1; $i<=$ile_stron; $i++){
+if($i==$page){
+echo $page.' ';
+}else{
+echo '<a href=gamelist.php?page='.$i.'>'.$i.'</a> ';
+}
+
+}
+if($page<$ile_stron){
+echo '<a href=gamelist.php?page='.($page+1).'>Następna Strona</a> ';
+}else {
+echo 'Następna Strona';
+}
+
+}
+
+
+logout.php
+
+Wylogowywanie z serwisu
+
+// jeśli user jest zalogowany
+if($_SESSION['logged'])
+{
+
+     // to go wylogowujemy i usuwamy jego dane z sesji
+     $_SESSION['logged'] = false;
+     $_SESSION['ID_GRACZ'] = '';
+                $_SESSION['LOGIN'] = '';
+		$_SESSION['AVATAR'] =  '';
+                $_SESSION['ADMIN'] =  '';
+		$_SESSION['MOD'] = '';
+		$_SESSION['IMIE'] = '';
+		$_SESSION['NAZWISKO'] = '';
+		$_SESSION['REG_DATE'] = '';
+
+
+     echo 'Zostałes poprawnie wylogowany! <a href="index.php">wróć</a>';
+
+
+
+     }
+      
+     // jeśli nie jest zalogowany
+      else
+     {
+
+
+
+          
+     }
+
+header('Location: '.$_SERVER['HTTP_REFERER']);
+
+
+
+miniaturka.php
+
+Funkcja tworząca miniaturkę zdjęcia
+
+function miniaturka($fn, $m_mode)
+{
+
+$img = imagecreatefromjpeg($fn);
+
+$width  = imagesx($img);
+$height = imagesy($img);
+
+$ratio1 = $height/$width;
+$ratio2 = $width/$height; 
+
+$dest = 150;
+
+
+//echo $width;
+//echo $height;
+
+
+if($m_mode==1){ //Auto
+if($width>$height){
+//echo 'ratio1: '.$ratio1;
+$Width_min = $dest;
+$height_min = round($dest*$ratio1);
+
+
+} else if($height>$width){
+//echo 'ratio2: '.$ratio2;
+$height_min = $dest;
+$width_min = round($dest*$ratio2);
+	}
+
+} else if($m_mode==2){ //Zdefiniowanie szerokości
+$Width_min = $dest;
+$height_min = round(($dest/$width)*$height);
+} else if($m_mode==3){// zdefiniowanie wysokości
+$height_min = $dest;
+$width_min = round(($dest/$height)*$width);
+}
+
+
+//echo 'szer: '.$width_min.' wys: '.$height_min;
+
+$img_mini = imagecreatetruecolor($width_min, $height_min);
+imagecopyresampled($img_mini, $img, 0, 0, 0, 0, $width_min , $height_min, $width  , $height);
+
+
+imagejpeg($img_mini, "".$fn."", 80); // utworzona miniaturka liczba (80) oznacza jakos obrazka od 0 do 100
+imagedestroy($img);
+imagedestroy($img_mini);
+
+}
+
+
+newsletter.php
+
+mechnizm dodający podany adres email do bazy danych newslettera
+
+
+$mail_n = $_POST['newslet']; 
+
+    $mail_n = trim($mail_n);
+
+	  $mail_n = strip_tags( mysql_real_escape_string( HTMLSpecialChars($mail_n)));
+
+$result = mysql_query("SELECT * FROM NEWSLETTER WHERE EMAIL='$mail_n'") ;
+ 
+        // jeśli już istnieje
+        if(mysql_num_rows($result)!=0) echo 'Mamy już taki email w bazie';
+        // jeśli nie...
+        else
+        { 
+    $ins = @mysql_query("INSERT INTO NEWSLETTER SET EMAIL='$mail_n'"); 
+
+
+    if($ins) {
+echo "Rekord został dodany poprawnie"; 
+
+// the message
+$msg = "Witaj\nZostałeś zapisany do newslettera w naszym serwisie.\nPozdrawiamy, ekipa TheGamesAmongUs.";
+
+// use wordwrap() if lines are longer than 70 characters
+$msg = wordwrap($msg,70);
+
+// send email
+mail($mail_n,"TheGamesAmongUs",$msg);
+
+
+	
+}
+
+
+
+profile.php	
+
+Podstrona do wyświetlania i zarządzania profilem
+
+<div id="profile">
+<?php
+
+
+$user_id_log = $_SESSION['ID_GRACZ'];
+
+$zapytanie = "Select AVATAR FROM GRACZ WHERE ID_GRACZ = '$user_id'";
+list($uavatar)=mysql_fetch_array (mysql_query($zapytanie));
+
+$zapytanie = "Select IMIE FROM GRACZ WHERE ID_GRACZ = '$user_id'";
+list($uimie)=mysql_fetch_array (mysql_query($zapytanie));
+
+$zapytanie = "Select NAZWISKO FROM GRACZ WHERE ID_GRACZ = '$user_id'";
+list($unazwisko)=mysql_fetch_array (mysql_query($zapytanie));
+
+$zapytanie = "Select LOGIN FROM GRACZ WHERE ID_GRACZ = '$user_id'";
+list($ulogin)=mysql_fetch_array (mysql_query($zapytanie));
+
+$zapytanie = "Select PLEC FROM GRACZ WHERE ID_GRACZ = '$user_id'";
+list($usex)=mysql_fetch_array (mysql_query($zapytanie));
+
+$zapytanie = "Select REG_DATE FROM GRACZ WHERE ID_GRACZ = '$user_id'";
+list($uregdate)=mysql_fetch_array (mysql_query($zapytanie));
+
+
+
+
+echo '<table><tr><td valign="top">';
+
+echo $ulogin;
+if($user_id==$_SESSION['ID_GRACZ']){
+echo ' - <a href="edit_profile.php">Edytuj profil</a>';
+				    }
+
+echo ' - <a href="ulub.php?fav=1&id='.$user_id.'">Ulubione</a>';
+
+if($user_id==$_SESSION['ID_GRACZ']){
+if($_SESSION['MOD']==1 or $_SESSION['ADMIN']==1){
+echo ' - <a href="admin.php?games=1">Panel administracyjny</a>';
+						}				    
+				   }
+
+echo '<br>'.$uimie.' '.$unazwisko;
+echo '<div id="avatar" style="background-image: url(img/avatar/'.$uavatar.'); background-repeat: no-repeat; background-size:100px, 100px;
+background-position: center; width:100px; height:100px; border-style: solid; border-width:1px; border-radius: 100px;"></div>';
+echo 'Zarejestrowany od:<br>'.$uregdate.'
+
+</td>
+<td>';
+
+$wynik = mysql_query("select * from OCENA_ART, ARTYKULY where OCENA_ART.ID_ART=ARTYKULY.ID_ARTYKUL and OCENA_ART.ID_GRACZ='$user_id' and ARTYKULY.RODZAJ='1' and ARTYKULY.ACCEPT='1' ORDER BY OCENA_ART.OCENA_ART DESC");
+$i=1;
+
+while($voted = mysql_fetch_array($wynik))
+  {
+$tablica[$i] ='<a href="article.php?id='.$voted['ID_ARTYKUL'].'"><div class="arti"><div id="cov_arti"><img width="65" height="92" src="img/article/'.$voted['COVER'].'"></img></div><div id="tit_arti">'.$voted['TYTUL_ART'].'<br>Ocena: '.$voted['OCENA_ART'].'</div></div></a>';
+$i++;
+
+  }
+
+
+echo'<h4>Najwyżej ocenione</h4>';
+echo '<table align="center" >';
+
+echo '<tr>';
+
+for($i=0; $i<=3; $i++){
+if($i>0){
+echo "<td width='150px' align='center'>$tablica[$i]</td>";
+
+}
+}
+echo '</tr>';
+
+
+
+echo '</table><br>';
+
+
+
+echo'<h4>Ostatnio komentowane</h4>';
+$wynik2 = mysql_query("select DISTINCT KOMENTARZE_ART.ID_ARTYKUL, ARTYKULY.COVER, ARTYKULY.TYTUL_ART from KOMENTARZE_ART, ARTYKULY where KOMENTARZE_ART.ID_ARTYKUL=ARTYKULY.ID_ARTYKUL and KOMENTARZE_ART.ID_GRACZ='$user_id' and ARTYKULY.RODZAJ='1' and ARTYKULY.ACCEPT='1' ORDER BY KOMENTARZE_ART.DATE DESC");
+$i=1;
+
+while($coms = mysql_fetch_array($wynik2))
+  {
+$tablica2[$i] ='<a href="article.php?id='.$coms['ID_ARTYKUL'].'"><div class="arti"><div id="cov_arti"><img width="65" height="92" src="img/article/'.$coms['COVER'].'"></img></div><div id="tit_arti">'.$coms['TYTUL_ART'].'</div></div></a>';
+$i++;
+
+  }
+
+
+
+echo '<table align="center" >';
+
+echo '<tr>';
+
+for($i=0; $i<=3; $i++){
+if($i>0){
+echo "<td width='150px' align='center'>$tablica2[$i]</td>";
+
+}
+}
+echo '</tr>';
+
+
+
+echo '</table>';
+
+echo '</td></tr>
+</table>';
+
+
+?>
+
+
+
+
+</div>
+
+
+register.php
+
+
+Podstrona ta zawiera Formularz rejestracji i mechanizm tworzenia konta użytkownika
+
+<div id="profile">
+<?php
+
+
+$user_id_log = $_SESSION['ID_GRACZ'];
+
+$zapytanie = "Select AVATAR FROM GRACZ WHERE ID_GRACZ = '$user_id'";
+list($uavatar)=mysql_fetch_array (mysql_query($zapytanie));
+
+$zapytanie = "Select IMIE FROM GRACZ WHERE ID_GRACZ = '$user_id'";
+list($uimie)=mysql_fetch_array (mysql_query($zapytanie));
+
+$zapytanie = "Select NAZWISKO FROM GRACZ WHERE ID_GRACZ = '$user_id'";
+list($unazwisko)=mysql_fetch_array (mysql_query($zapytanie));
+
+$zapytanie = "Select LOGIN FROM GRACZ WHERE ID_GRACZ = '$user_id'";
+list($ulogin)=mysql_fetch_array (mysql_query($zapytanie));
+
+$zapytanie = "Select PLEC FROM GRACZ WHERE ID_GRACZ = '$user_id'";
+list($usex)=mysql_fetch_array (mysql_query($zapytanie));
+
+$zapytanie = "Select REG_DATE FROM GRACZ WHERE ID_GRACZ = '$user_id'";
+list($uregdate)=mysql_fetch_array (mysql_query($zapytanie));
+
+
+
+
+echo '<table><tr><td valign="top">';
+
+echo $ulogin;
+if($user_id==$_SESSION['ID_GRACZ']){
+echo ' - <a href="edit_profile.php">Edytuj profil</a>';
+				    }
+
+echo ' - <a href="ulub.php?fav=1&id='.$user_id.'">Ulubione</a>';
+
+if($user_id==$_SESSION['ID_GRACZ']){
+if($_SESSION['MOD']==1 or $_SESSION['ADMIN']==1){
+echo ' - <a href="admin.php?games=1">Panel administracyjny</a>';
+						}				    
+				   }
+
+echo '<br>'.$uimie.' '.$unazwisko;
+echo '<div id="avatar" style="background-image: url(img/avatar/'.$uavatar.'); background-repeat: no-repeat; background-size:100px, 100px;
+background-position: center; width:100px; height:100px; border-style: solid; border-width:1px; border-radius: 100px;"></div>';
+echo 'Zarejestrowany od:<br>'.$uregdate.'
+
+</td>
+<td>';
+
+$wynik = mysql_query("select * from OCENA_ART, ARTYKULY where OCENA_ART.ID_ART=ARTYKULY.ID_ARTYKUL and OCENA_ART.ID_GRACZ='$user_id' and ARTYKULY.RODZAJ='1' and ARTYKULY.ACCEPT='1' ORDER BY OCENA_ART.OCENA_ART DESC");
+$i=1;
+
+while($voted = mysql_fetch_array($wynik))
+  {
+$tablica[$i] ='<a href="article.php?id='.$voted['ID_ARTYKUL'].'"><div class="arti"><div id="cov_arti"><img width="65" height="92" src="img/article/'.$voted['COVER'].'"></img></div><div id="tit_arti">'.$voted['TYTUL_ART'].'<br>Ocena: '.$voted['OCENA_ART'].'</div></div></a>';
+$i++;
+
+  }
+
+
+echo'<h4>Najwyżej ocenione</h4>';
+echo '<table align="center" >';
+
+echo '<tr>';
+
+for($i=0; $i<=3; $i++){
+if($i>0){
+echo "<td width='150px' align='center'>$tablica[$i]</td>";
+
+}
+}
+echo '</tr>';
+
+
+
+echo '</table><br>';
+
+
+
+echo'<h4>Ostatnio komentowane</h4>';
+$wynik2 = mysql_query("select DISTINCT KOMENTARZE_ART.ID_ARTYKUL, ARTYKULY.COVER, ARTYKULY.TYTUL_ART from KOMENTARZE_ART, ARTYKULY where KOMENTARZE_ART.ID_ARTYKUL=ARTYKULY.ID_ARTYKUL and KOMENTARZE_ART.ID_GRACZ='$user_id' and ARTYKULY.RODZAJ='1' and ARTYKULY.ACCEPT='1' ORDER BY KOMENTARZE_ART.DATE DESC");
+$i=1;
+
+while($coms = mysql_fetch_array($wynik2))
+  {
+$tablica2[$i] ='<a href="article.php?id='.$coms['ID_ARTYKUL'].'"><div class="arti"><div id="cov_arti"><img width="65" height="92" src="img/article/'.$coms['COVER'].'"></img></div><div id="tit_arti">'.$coms['TYTUL_ART'].'</div></div></a>';
+$i++;
+
+  }
+
+
+
+echo '<table align="center" >';
+
+echo '<tr>';
+
+for($i=0; $i<=3; $i++){
+if($i>0){
+echo "<td width='150px' align='center'>$tablica2[$i]</td>";
+
+}
+}
+echo '</tr>';
+
+
+
+echo '</table>';
+
+echo '</td></tr>
+</table>';
+
+
+search.php
+
+Wyszukiwarka serwisu
+
+echo '<div id="abc">';
+
+if($lit!=null){
+$zapytanie = "SELECT COUNT(*) FROM ARTYKULY WHERE RODZAJ = 1 and ACCEPT=1 and TYTUL_ART  LIKE '%$lit%'";
+list($ile_wynik)=mysql_fetch_array (mysql_query($zapytanie));
+} else {
+$ile_wynik = 0;
+}
+echo 'Wyszukanych Gier: '.$ile_wynik.'<br>';
+
+
+echo '</br>';
+
+
+$ile_stron = ceil($ile_wynik/$wpp);
+$wynik = mysql_query("SELECT * FROM ARTYKULY WHERE RODZAJ = 1  and TYTUL_ART LIKE '%$lit%' and ACCEPT=1 ORDER BY TYTUL_ART ASC");
+$i=0;
+
+while($wiersz = mysql_fetch_array($wynik))
+  {
+	
+$tablica[$i] ='<a href="article.php?id='.$wiersz['ID_ARTYKUL'].'">'.$wiersz['TYTUL_ART'].'</a>';
+$i++;
+
+  }
+
+
+for($i=(($page*$wpp)-$wpp), $j=(($page*$wpp)-$wpp+1); $i<($page*$wpp) and $i<$ile_wynik; $i++, $j++){ //Wyświetlanie odpowieniedniej ilości rekordów na podtronie
+
+echo $j.' '.$tablica[$i].'</br>';
+		 
+}
+
+echo '</div>';
+
+//Poprzednia strona 123(4)56789 Następna strona || Dla alfabetycznej listy
+
+echo '<br><div id="list_nav">';
+if($page>1){
+echo '<a href=search.php?q='.$lit.'&page='.($page-1).'>Poprzednia Strona</a> ';
+}else {
+echo 'Poprzednia Strona ';
+}
+
+for($i=1; $i<=$ile_stron; $i++){
+if($i==$page){
+echo $page.' ';
+}else{
+echo '<a href=search.php?q='.$lit.'&page='.$i.'>'.$i.'</a> ';
+}
+
+}
+if($page<$ile_stron){
+echo '<a href=search.php?&q='.$lit.'&page='.($page+1).'>Następna Strona</a> ';
+}else {
+echo 'Następna Strona';
+}
+
+ echo '</div>';
+
+
+
+
+
+/*
+while($wiersz = mysql_fetch_array($wynik))
+  {
+	
+  echo $i;
+  echo ' <a href="article.php?id='.$wiersz['ID_ARTYKUL'].'">'.$wiersz['TYTUL_ART'].'</a>';
+  echo "<br>";
+  }
+*/
+
+?>
+
+
+
+</div>
+
+
+fav.php
+
+Plik zawierający mechanizm dodawania i usuwania informacji o tym czy dany gracz, polubił daną grę
+
+baza();
+session_start();
+$article_id = $_REQUEST['id'];
+$user_id = $_SESSION['ID_GRACZ'];
+
+echo $user_id;
+
+if($_SESSION['logged']) {
+
+
+$zapytanie = "Select ID_GRY FROM ARTYKULY WHERE ID_ARTYKUL = '$article_id'";
+list($game_id)=mysql_fetch_array (mysql_query($zapytanie));
+
+
+
+
+
+
+$result = mysql_query("SELECT * FROM ULUBIONE WHERE ID_GRY='$game_id'AND ID_GRACZ='$user_id'") ;
+ 
+
+
+        // jeśli już istnieje
+        if(mysql_num_rows($result)!=0) {
+echo '<h2>Już istnieje konto z takim loginem!</h2>';
+$ins = @mysql_query("DELETE FROM ULUBIONE WHERE ID_GRY='$game_id'AND ID_GRACZ='$user_id'"); 
+header('Location: '.$_SERVER['HTTP_REFERER']);
+}
+        // jeśli nie...
+        else
+        {   
+echo 'Gra została dodana do ulubionych';
+
+$ins = @mysql_query("INSERT INTO ULUBIONE SET ID_GRY='$game_id', ID_GRACZ='$user_id' "); 
+header('Location: '.$_SERVER['HTTP_REFERER']);
+	}
+
+
+			}else {
+header('Location: '.$_SERVER['HTTP_REFERER']);
+}
+
+
